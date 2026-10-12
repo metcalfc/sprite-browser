@@ -119,6 +119,28 @@ class AnchorSession(unittest.TestCase):
         fields = anchor_session.Session.__dataclass_fields__
         self.assertFalse(any("cdp" in name for name in fields))
 
+    def test_retries_when_rate_limited(self) -> None:
+        limited = mock.Mock(status_code=429, headers={"retry-after": "3"})
+        created = mock.Mock(status_code=200, headers={})
+        created.json.return_value = {
+            "data": {"id": "s1", "cdp_url": "wss://x", "live_view_url": "v"}
+        }
+        with (
+            mock.patch.object(anchor_session.requests, "post", side_effect=[limited, created]),
+            mock.patch.object(anchor_session.time, "sleep") as sleep,
+            mock.patch("sys.stderr"),
+        ):
+            session_id, _, live_view = anchor_session.start_anchor_session(
+                "k", "au", max_minutes=1, idle_minutes=1, recording=False
+            )
+        self.assertEqual((session_id, live_view), ("s1", "v"))
+        sleep.assert_called_once_with(3.0)
+
+    def test_retry_wait_is_bounded(self) -> None:
+        self.assertEqual(anchor_session.retry_after_seconds("9999", 0), 60.0)
+        self.assertEqual(anchor_session.retry_after_seconds(None, 1), 10.0)
+        self.assertEqual(anchor_session.retry_after_seconds("soon", 0), 5.0)
+
     def test_session_deleted_when_connect_fails(self) -> None:
         ended: list[str] = []
 

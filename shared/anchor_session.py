@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -24,6 +25,8 @@ import requests
 from playwright.sync_api import Page, sync_playwright
 
 ANCHOR_API = "https://api.anchorbrowser.io/v1"
+RATE_LIMIT_RETRIES = 4
+RATE_LIMIT_MAX_WAIT = 60.0
 
 
 class MissingKey(RuntimeError):
@@ -66,18 +69,35 @@ def session_config(
     return {"session": config}
 
 
+def retry_after_seconds(header: str | None, attempt: int) -> float:
+    """How long to wait after a 429: the Retry-After header, else a doubling backoff."""
+    try:
+        wait = float(header) if header else 5.0 * 2**attempt
+    except ValueError:
+        wait = 5.0 * 2**attempt
+    return min(max(wait, 1.0), RATE_LIMIT_MAX_WAIT)
+
+
 def start_anchor_session(
     key: str, country: str | None, *, max_minutes: int, idle_minutes: int, recording: bool
 ) -> tuple[str, str, str | None]:
     """Returns (session_id, cdp_url, live_view_url). Callers must not log cdp_url."""
-    response = requests.post(
-        f"{ANCHOR_API}/sessions",
-        headers={"anchor-api-key": key, "content-type": "application/json"},
-        json=session_config(
-            country, max_minutes=max_minutes, idle_minutes=idle_minutes, recording=recording
-        ),
-        timeout=60,
+    body = session_config(
+        country, max_minutes=max_minutes, idle_minutes=idle_minutes, recording=recording
     )
+    for attempt in range(RATE_LIMIT_RETRIES + 1):
+        response = requests.post(
+            f"{ANCHOR_API}/sessions",
+            headers={"anchor-api-key": key, "content-type": "application/json"},
+            json=body,
+            timeout=60,
+        )
+        # Anchor rate-limits session creation; a sweep opens several in a row.
+        if response.status_code != 429 or attempt == RATE_LIMIT_RETRIES:
+            break
+        wait = retry_after_seconds(response.headers.get("retry-after"), attempt)
+        print(f"Anchor rate limit hit, retrying in {wait:.0f}s", file=sys.stderr, flush=True)
+        time.sleep(wait)
     response.raise_for_status()
     data = response.json()["data"]
     return data["id"], data["cdp_url"], data.get("live_view_url")
