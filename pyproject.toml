@@ -1,0 +1,49 @@
+[project]
+name = "sprite-browser"
+version = "0.1.0"
+description = "Give your Sprite a browser: agents that test a Fly app from every region, with Anchor."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "playwright>=1.45",
+    "requests>=2.31",
+    "starlette>=0.40",
+    "uvicorn>=0.30",
+    "python-multipart>=0.0.9",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-requests",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["out"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["shared", "storefront", "grid"]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = [".", "app/src", "01-region-sweep"]
+explicit_package_bases = true
+warn_unused_ignores = true
+check_untyped_defs = true
+files = [
+    "app/src/storefront",
+    "shared",
+    "01-region-sweep/sweep.py",
+    "01-region-sweep/grid.py",
+    "02-repro/repro_agent.py",
+    "03-first-user/first_user.py",
+]

@@ -1,0 +1,8 @@
+[
+  {"region": "iad", "city": "Ashburn", "country": "us", "locale": "en-US", "timezone": "America/New_York"},
+  {"region": "lhr", "city": "London", "country": "gb", "locale": "en-GB", "timezone": "Europe/London"},
+  {"region": "fra", "city": "Frankfurt", "country": "de", "locale": "de-DE", "timezone": "Europe/Berlin"},
+  {"region": "gru", "city": "São Paulo", "country": "br", "locale": "pt-BR", "timezone": "America/Sao_Paulo"},
+  {"region": "nrt", "city": "Tokyo", "country": "jp", "locale": "ja-JP", "timezone": "Asia/Tokyo"},
+  {"region": "syd", "city": "Sydney", "country": "au", "locale": "en-AU", "timezone": "Australia/Sydney"}
+]
