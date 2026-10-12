@@ -48,7 +48,7 @@ def local_amount(usd_cents: int, market: Market) -> Decimal:
 def format_amount(amount: Decimal, market: Market) -> str:
     """Render an amount the way people in that market expect to read it."""
     whole, _, frac = f"{amount:.{market.decimals}f}".partition(".")
-    groups = []
+    groups: list[str] = []
     while len(whole) > 3:
         groups.insert(0, whole[-3:])
         whole = whole[:-3]
