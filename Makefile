@@ -6,7 +6,7 @@ PORT ?= 8080
 LOCAL_URL := http://127.0.0.1:$(PORT)
 FLY_APP ?= $(shell sed -n 's/^app = "\(.*\)"/\1/p' app/fly.toml)
 APP_URL ?= https://$(FLY_APP).fly.dev
-REGIONS := lhr fra gru nrt syd
+REGIONS := iad lhr fra gru nrt syd
 ANCHOR_KEY := $(or $(ANCHOR_API_KEY),$(ANCHORBROWSER_API_KEY))
 
 .PHONY: help setup dev lint test smoke smoke-local check e2e deploy regions clean
@@ -17,7 +17,7 @@ help:
 	@echo "make check        lint + test + smoke (smoke skips without an Anchor key)"
 	@echo "make smoke-local  run all three demos against a local app, no key needed"
 	@echo "make deploy       deploy the app to Fly"
-	@echo "make regions      add a Machine in each of: $(REGIONS)"
+	@echo "make regions      one Machine in each of: $(REGIONS)"
 	@echo "make e2e          run repro tests the agent wrote in e2e/"
 
 setup:
